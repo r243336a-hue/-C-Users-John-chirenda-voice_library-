@@ -1,0 +1,3 @@
+timestamp,command,intent,success,details
+2026-04-14T10:41:32.225523,find title,SEARCH,True,No books found
+2026-04-14T10:41:44.973140,find Pride,SEARCH,True,No books found

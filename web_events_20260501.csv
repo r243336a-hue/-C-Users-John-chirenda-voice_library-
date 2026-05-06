@@ -1,0 +1,6 @@
+timestamp,event,query,file,lang,category,rating,extra
+2026-05-01T15:25:44,welcome,,,en,,,
+2026-05-01T15:26:00,welcome,,,en,,,
+2026-05-01T15:26:13,read_start,,williamfhudgings_unknown_author_cleaned.txt,en,English,,
+2026-05-01T15:29:01,welcome,,,en,,,
+2026-05-01T15:30:12,welcome,,,en,,,

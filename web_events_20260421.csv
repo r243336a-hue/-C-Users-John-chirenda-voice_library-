@@ -1,0 +1,7 @@
+timestamp,event,query,file,lang,category,rating,extra
+2026-04-21T17:57:10,welcome,,,en,,,
+2026-04-21T18:06:13,typed_search,the mordant,,en,,,
+2026-04-21T18:07:38,read_start,the mordant,the_mordant_eberle_cleaned.txt,en,English,,
+2026-04-21T18:13:18,welcome,,,en,,,
+2026-04-21T18:13:25,read_start,,its_time_something_happened_doyle_cleaned.txt,en,English,,
+2026-04-21T18:13:37,pause,,its_time_something_happened_doyle_cleaned.txt,en,,,

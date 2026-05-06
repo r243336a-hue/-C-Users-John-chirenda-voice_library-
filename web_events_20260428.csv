@@ -1,0 +1,5 @@
+timestamp,event,query,file,lang,category,rating,extra
+2026-04-28T22:42:13,welcome,,,en,,,
+2026-04-28T22:43:56,welcome,,,en,,,
+2026-04-28T22:44:33,read_start,,africa_ferrer_i_codina_cleaned.txt,en,English,,
+2026-04-28T22:46:11,read_start,,lucyellenguernsey_unknown_author_cleaned.txt,en,English,,

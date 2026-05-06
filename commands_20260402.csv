@@ -1,0 +1,32 @@
+timestamp,command,intent,success,details
+2026-04-02T11:07:24.649265,Library faint type,SEARCH,True,No books found
+2026-04-02T11:11:57.142230,play title,SEARCH,True,No books found
+2026-04-02T11:12:17.489368,Thank you period,SEARCH,True,No books found
+2026-04-02T11:12:59.648133,are we getting married,SEARCH,True,No books found
+2026-04-02T16:17:41.871407,32345 things,SEARCH,True,No books found
+2026-04-02T16:20:18.420235,B&G,SEARCH,True,No books found
+2026-04-02T16:22:51.551703,play pregnant,SEARCH,True,No books found
+2026-04-02T16:23:31.954090,Burlington at jeans videos which have been said play African folk tales,PLAY,False,Book file not found: data/cleaned/african_folk_tales.txt
+2026-04-02T16:23:47.748699,play African folk tales,PLAY,False,Book file not found: data/cleaned/african_folk_tales.txt
+2026-04-02T16:23:59.325983,play title,SEARCH,True,No books found
+2026-04-02T16:24:52.135959,I'm tired of wonder,SEARCH,True,No books found
+2026-04-02T16:26:05.414673,hello the 50 new popping up to you,SEARCH,True,No books found
+2026-04-02T16:27:50.796926,infinite different studio session,SEARCH,True,No books found
+2026-04-02T16:29:13.787979,hey Google hey Google,SEARCH,True,No books found
+2026-04-02T16:30:07.733520,change your volume,SEARCH,True,No books found
+2026-04-02T16:32:50.834673,91125,SEARCH,True,No books found
+2026-04-02T16:33:58.368657,that's the reason you got it baby,SEARCH,True,No books found
+2026-04-02T16:34:13.309459,American Girl outside the company,SEARCH,True,No books found
+2026-04-02T16:35:54.610726,999326,SEARCH,True,No books found
+2026-04-02T16:36:23.009526,1199,SEARCH,True,No books found
+2026-04-02T16:36:51.593074,Walmart America,SEARCH,True,No books found
+2026-04-02T16:37:16.126767,what's the weather like outside,SEARCH,True,No books found
+2026-04-02T16:37:44.989516,this is another way if you got another new number period,SEARCH,True,No books found
+2026-04-02T16:38:25.371497,why would I get my phone,SEARCH,True,No books found
+2026-04-02T16:38:53.991905,did you go,SEARCH,True,No books found
+2026-04-02T16:39:03.620048,remind me now,SEARCH,True,No books found
+2026-04-02T16:39:11.561112,what is a good girl,SEARCH,True,No books found
+2026-04-02T16:39:29.860682,and everything,SEARCH,True,No books found
+2026-04-02T16:47:21.781886,Fox News please,SEARCH,True,No books found
+2026-04-02T16:58:02.875021,I need a little bit before you purchase,SEARCH,True,No books found
+2026-04-02T17:06:15.765369,an automobile battery,SEARCH,True,No books found
