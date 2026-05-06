@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice Library</title>
+    <style>
+        body { font-family: Arial; margin: 40px; text-align: center; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; cursor: pointer; }
+        #results { margin-top: 20px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 8px 0; padding: 8px; background: #f5f5f5; border-radius: 5px; }
+        #controlPanel { margin-top: 20px; }
+        .active { background: #4CAF50; color: white; }
+    </style>
+</head>
+<body>
+    <div id="startOverlay" style="position: fixed; top:0; left:0; width:100%; height:100%; background:#f0f0f0; display:flex; justify-content:center; align-items:center; z-index:1000;">
+        <button id="startBtn" style="padding:20px 40px; font-size:24px;">🎤 Start Voice Library</button>
+    </div>
+
+    <div id="mainInterface" style="display:none;">
+        <h1>Voice‑Navigable Digital Library</h1>
+        <button id="listenBtn">🎤 Start Listening (Push to Talk)</button>
+        <div id="results"></div>
+        <div id="controlPanel" style="display:none;">
+            <button id="playPauseBtn">⏸️ Pause</button>
+            <button id="stopBtn">⏹️ Stop</button>
+            <button id="slowBtn">🐢 Slow</button>
+            <button id="fastBtn">🐇 Fast</button>
+        </div>
+    </div>
+
+    <script>
+        // Elements
+        const startBtn = document.getElementById('startBtn');
+        const startOverlay = document.getElementById('startOverlay');
+        const mainInterface = document.getElementById('mainInterface');
+        const listenBtn = document.getElementById('listenBtn');
+        const resultsDiv = document.getElementById('results');
+        const controlPanel = document.getElementById('controlPanel');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const slowBtn = document.getElementById('slowBtn');
+        const fastBtn = document.getElementById('fastBtn');
+
+        // Speech synthesis
+        let synth = window.speechSynthesis;
+        let utterance = null;
+        let isPlaying = false;
+        let currentBookId = null;
+        let currentSpeechRate = 0.9;
+        let currentBookText = '';
+
+        // Start button: play welcome message, then show main interface
+        startBtn.onclick = () => {
+            startOverlay.style.display = 'none';
+            mainInterface.style.display = 'block';
+            const welcomeAudio = new Audio('/static/welcome.mp3');
+            welcomeAudio.play();
+            welcomeAudio.onended = () => {
+                // Speak instructions using TTS
+                speakInstructions();
+            };
+        };
+
+        function speakInstructions() {
+            const text = "Welcome. You can say 'find' followed by a title, author, or genre. For example, say 'find mystery books'. Click the Start Listening button and speak.";
+            utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            synth.speak(utterance);
+        }
+
+        // Send voice command to backend
+        async function sendCommand() {
+            resultsDiv.innerHTML = 'Listening...';
+            try {
+                const response = await fetch('/listen', { method: 'POST' });
+                const data = await response.json();
+                if (data.error) {
+                    resultsDiv.innerHTML = `<p>⚠️ ${data.error}</p>`;
+                    return;
+                }
+                if (data.message) {
+                    resultsDiv.innerHTML = `<p>${data.message}</p>`;
+                }
+                if (data.books && data.books.length > 0) {
+                    let html = '<ul>';
+                    data.books.forEach(book => {
+                        html += `<li><strong>${book.title}</strong> by ${book.author} <button class="playBookBtn" data-id="${book.id}" data-title="${book.title}" data-author="${book.author}">🔊 Play</button></li>`;
+                    });
+                    html += '</ul>';
+                    resultsDiv.innerHTML = html;
+                    // Attach event listeners to play buttons
+                    document.querySelectorAll('.playBookBtn').forEach(btn => {
+                        btn.onclick = () => {
+                            const id = parseInt(btn.dataset.id);
+                            const title = btn.dataset.title;
+                            const author = btn.dataset.author;
+                            startPlayback(id, title, author);
+                        };
+                    });
+                }
+                if (data.results && data.results.length > 0 && !data.books) {
+                    // Auto‑select the first result if no play button yet?
+                    // We'll rely on play buttons above.
+                }
+            } catch (err) {
+                resultsDiv.innerHTML = `<p>Error: ${err.message}</p>`;
+            }
+        }
+
+        // Start playback of a book
+        async function startPlayback(bookId, title, author) {
+            currentBookId = bookId;
+            controlPanel.style.display = 'block';
+            playPauseBtn.textContent = '⏸️ Pause';
+            try {
+                const response = await fetch(`/book_text/${bookId}`);
+                const data = await response.json();
+                if (data.error) {
+                    resultsDiv.innerHTML = `<p>Error: ${data.error}</p>`;
+                    return;
+                }
+                currentBookText = data.text;
+                resultsDiv.innerHTML = `<h3>${data.title} by ${data.author}</h3>
+                                        <div style="height:200px; overflow:auto; border:1px solid #ccc; padding:5px;">${data.text.slice(0,1000)}...</div>
+                                        <p>📖 Playing...</p>`;
+                if (synth.speaking) synth.cancel();
+                utterance = new SpeechSynthesisUtterance(data.text);
+                utterance.lang = 'en-US';
+                utterance.rate = currentSpeechRate;
+                utterance.onend = () => {
+                    isPlaying = false;
+                    controlPanel.style.display = 'none';
+                    resultsDiv.innerHTML += '<p>✅ End of book.</p>';
+                };
+                synth.speak(utterance);
+                isPlaying = true;
+            } catch (err) {
+                resultsDiv.innerHTML = `<p>Error loading book: ${err.message}</p>`;
+            }
+        }
+
+        // Playback controls
+        playPauseBtn.onclick = () => {
+            if (!isPlaying) return;
+            if (synth.speaking && !synth.paused) {
+                synth.pause();
+                playPauseBtn.textContent = '▶️ Resume';
+                resultsDiv.innerHTML += '<p>⏸️ Paused. Press Resume to continue.</p>';
+            } else if (synth.paused) {
+                synth.resume();
+                playPauseBtn.textContent = '⏸️ Pause';
+                resultsDiv.innerHTML += '<p>▶️ Resumed.</p>';
+            }
+        };
+
+        stopBtn.onclick = () => {
+            if (synth.speaking) synth.cancel();
+            isPlaying = false;
+            controlPanel.style.display = 'none';
+            resultsDiv.innerHTML += '<p>⏹️ Stopped.</p>';
+        };
+
+        slowBtn.onclick = () => {
+            currentSpeechRate = 0.7;
+            if (synth.speaking) {
+                // Rate change only applies to next utterance.
+                // For immediate effect, we would need to restart, but that's complex.
+                resultsDiv.innerHTML += '<p>🐢 Speed set to slow (will apply to next book).</p>';
+                return;
+            }
+            resultsDiv.innerHTML += '<p>🐢 Speed set to slow.</p>';
+        };
+
+        fastBtn.onclick = () => {
+            currentSpeechRate = 1.2;
+            resultsDiv.innerHTML += '<p>🐇 Speed set to fast.</p>';
+        };
+
+        listenBtn.onclick = () => {
+            sendCommand();
+        };
+    </script>
+</body>
+</html>
