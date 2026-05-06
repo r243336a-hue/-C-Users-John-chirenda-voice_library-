@@ -1,0 +1,12 @@
+# Core
+speechrecognition==3.10.1
+pygame==2.5.2
+vosk==0.3.45
+
+# TTS
+TTS==0.22.0
+torch==2.2.0
+
+# Data & logging (compatible with TTS 0.22.0 on Python 3.10)
+pandas==1.5.3
+numpy==1.22.0
