@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice Library</title>
+    <style>
+        body { font-family: Arial; margin: 40px; text-align: center; }
+        button { padding: 10px 20px; font-size: 16px; margin: 10px; }
+        #results { margin-top: 20px; }
+        ul { list-style: none; padding: 0; }
+        li { margin: 5px; }
+    </style>
+</head>
+<body>
+    <div id="startOverlay" style="position: fixed; top:0; left:0; width:100%; height:100%; background:#f0f0f0; display:flex; justify-content:center; align-items:center; z-index:1000;">
+        <button id="startBtn" style="padding:20px 40px; font-size:24px;">🎤 Start Voice Library</button>
+    </div>
+
+    <div id="mainInterface" style="display:none;">
+        <h1>Voice‑Navigable Digital Library</h1>
+        <button id="listenBtn">🎤 Start Listening (Push to Talk)</button>
+        <div id="results"></div>
+        <button id="stopReadingBtn" style="display:none;">Stop Reading</button>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const startOverlay = document.getElementById('startOverlay');
+        const mainInterface = document.getElementById('mainInterface');
+        const listenBtn = document.getElementById('listenBtn');
+        const resultsDiv = document.getElementById('results');
+        const stopReadingBtn = document.getElementById('stopReadingBtn');
+
+        let synth = window.speechSynthesis;
+        let utterance = null;
+        let isPlaying = false;
+        let currentBookId = null;
+
+        // Welcome message (your own voice)
+        startBtn.onclick = () => {
+            startOverlay.style.display = 'none';
+            mainInterface.style.display = 'block';
+            const welcomeAudio = new Audio('/static/welcome.mp3');
+            welcomeAudio.play();
+            welcomeAudio.onended = () => {
+                // After welcome, speak instructions
+                speakAndThenListen("Welcome to the Voice Library. You can say 'find' followed by a title, author, or genre. For example, say 'find mystery books'. Which book would you like to read?");
+            };
+        };
+
+        function speakAndThenListen(text) {
+            if (synth.speaking) synth.cancel();
+            utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            utterance.onend = () => {
+                // After speaking, automatically listen
+                listenForCommand();
+            };
+            synth.speak(utterance);
+        }
+
+        function listenForCommand() {
+            resultsDiv.innerHTML = 'Listening...';
+            fetch('/listen', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.action === 'speak') {
+                        speakAndThenListen(data.text);
+                    } else if (data.action === 'play' || data.action === 'play_next') {
+                        startPlayback(data.book_id, data.title, data.author);
+                    } else if (data.action === 'pause') {
+                        if (synth.speaking && !synth.paused) {
+                            synth.pause();
+                            resultsDiv.innerHTML = '⏸️ Paused. Say "resume" to continue.';
+                        }
+                    } else if (data.action === 'resume') {
+                        if (synth.paused) {
+                            synth.resume();
+                            resultsDiv.innerHTML = '▶️ Resumed.';
+                        } else if (!synth.speaking && currentBookId) {
+                            // Resume last book from beginning (simplified)
+                            fetch(`/book_text/${currentBookId}`)
+                                .then(res => res.json())
+                                .then(bookData => {
+                                    startPlayback(currentBookId, bookData.title, bookData.author);
+                                });
+                        }
+                    } else if (data.action === 'stop') {
+                        if (synth.speaking) synth.cancel();
+                        isPlaying = false;
+                        stopReadingBtn.style.display = 'none';
+                        resultsDiv.innerHTML = data.text || '⏹️ Stopped.';
+                        // Go back to listening for new book
+                        listenForCommand();
+                    } else if (data.action === 'rate') {
+                        window.speechRate = data.value;
+                        resultsDiv.innerHTML = `Speech rate changed to ${data.value === 0.7 ? 'slow' : 'fast'}.`;
+                    } else {
+                        resultsDiv.innerHTML = data.message || 'Command processed.';
+                    }
+                });
+        }
+
+        function startPlayback(bookId, title, author) {
+            currentBookId = bookId;
+            fetch(`/book_text/${bookId}`)
+                .then(res => res.json())
+                .then(data => {
+                    resultsDiv.innerHTML = `<h3>${data.title} by ${data.author}</h3>
+                                            <div style="height:200px; overflow:auto; border:1px solid #ccc; padding:5px;">${data.text.slice(0,1000)}...</div>`;
+                    if (synth.speaking) synth.cancel();
+                    utterance = new SpeechSynthesisUtterance(data.text);
+                    utterance.lang = 'en-US';
+                    utterance.rate = window.speechRate || 0.9;
+                    utterance.onend = () => {
+                        isPlaying = false;
+                        stopReadingBtn.style.display = 'none';
+                        resultsDiv.innerHTML += '<p>📖 End of book. Say "find" to search again.</p>';
+                        listenForCommand();
+                    };
+                    synth.speak(utterance);
+                    isPlaying = true;
+                    stopReadingBtn.style.display = 'inline-block';
+                    stopReadingBtn.onclick = () => {
+                        synth.cancel();
+                        listenForCommand();
+                    };
+                });
+        }
+
+        // Manual button for push‑to‑talk
+        listenBtn.onclick = () => {
+            listenForCommand();
+        };
+    </script>
+</body>
+</html>
+            gap: 18px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(167,139,250,0.15));
+            border: 1px solid rgba(148,163,184,0.2);
+            border-radius: 22px;
+            padding: 26px;
+            box-shadow: 0 25px 60px rgba(2, 6, 23, 0.5);
+            display: grid;
+            gap: 10px;
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: 30px;
+            letter-spacing: 0.6px;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 2.2fr 1fr;
+            gap: 16px;
+        }
+
+        .left-stack {
+            display: grid;
+            gap: 16px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid rgba(148,163,184,0.2);
+            border-radius: 18px;
+            padding: 16px;
+        }
+
+        .search-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(148,163,184,0.3);
+            background: #0b1220;
+            color: var(--text);
+            font-size: 16px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        select {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(148,163,184,0.3);
+            background: #0b1220;
+            color: var(--text);
+            font-size: 14px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            min-width: 0;
+        }
+
+        button:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25); }
+
+        button:focus-visible,
+        input[type="text"]:focus-visible,
+        select:focus-visible {
+            outline: 2px solid rgba(56, 189, 248, 0.85);
+            outline-offset: 2px;
+        }
+
+        .btn-primary { background: var(--accent); color: #0b1220; }
+        .btn-secondary { background: var(--accent-2); color: #0b1220; }
+        .btn-outline { background: transparent; color: var(--text); border: 1px solid rgba(148,163,184,0.4); }
+        .btn-success { background: var(--success); color: #052e2b; }
+        .btn-warning { background: var(--warning); color: #2e1c00; }
+        .btn-danger { background: var(--danger); color: #3a0c0c; }
+        .btn-muted { background: #1f2937; color: var(--text); }
+
+        .status {
+            color: var(--muted);
+            margin-top: 10px;
+            font-size: 14px;
+            min-height: 18px;
+        }
+
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .chip {
+            background: var(--chip);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .chip.active { border-color: var(--accent); color: var(--text); }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .book-card {
+            background: var(--card);
+            border: 1px solid rgba(148,163,184,0.15);
+            border-radius: 14px;
+            padding: 12px;
+            display: grid;
+            gap: 6px;
+            min-height: 140px;
+        }
+
+        .book-card h3 { margin: 0; font-size: 16px; }
+        .book-card p { margin: 0; color: var(--muted); font-size: 12px; }
+        .book-card .meta { display: flex; gap: 8px; flex-wrap: wrap; }
+        .book-card .tag {
+            background: #0b1220;
+            border: 1px solid rgba(148,163,184,0.2);
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .preview {
+            background: #0b1220;
+            border: 1px solid rgba(148,163,184,0.2);
+            border-radius: 14px;
+            padding: 12px;
+            max-height: 220px;
+            overflow: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .full-text {
+            background: #0b1220;
+            border: 1px solid rgba(148,163,184,0.2);
+            border-radius: 14px;
+            padding: 12px;
+            max-height: 360px;
+            overflow: auto;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .chunk {
+            display: inline;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
+        .chunk.active {
+            background: rgba(56, 189, 248, 0.25);
+            color: #ffffff;
+        }
+
+        .player {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .helper {
+            background: #0b1220;
+            border: 1px dashed rgba(148,163,184,0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .footer {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .suggestions {
+            margin-top: 10px;
+            display: grid;
+            gap: 6px;
+        }
+
+        .suggestion-item {
+            padding: 8px 10px;
+            background: #0b1220;
+            border-radius: 10px;
+            border: 1px solid rgba(148,163,184,0.2);
+            cursor: pointer;
+            font-size: 13px;
+            min-width: 0;
+        }
+
+        .summary-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .summary-pill {
+            background: #0b1220;
+            border: 1px solid rgba(148,163,184,0.2);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        @media (max-width: 1100px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .left-stack {
+                gap: 14px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            :root { --pad-x: 12px; --pad-y: 20px; }
+
+            .search-row {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
+            .player {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .results {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 420px) {
+            :root { --pad-x: 10px; --pad-y: 16px; }
+
+            .hero { padding: 18px; border-radius: 18px; }
+            .hero h1 { font-size: 24px; }
+
+            button { width: 100%; }
+            .player { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="startOverlay" style="position: fixed; inset: 0; background: rgba(11, 18, 32, 0.96); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="max-width: 520px; width: 100%; padding: 28px; text-align: center; background: #111827; border: 1px solid rgba(148,163,184,0.15); border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.35);">
+            <h2 style="color:#ffffff; margin:0 0 12px; font-size: 26px;">Start Voice Library</h2>
+            <p style="color:#cbd5e1; margin:0 0 24px; line-height:1.6;">Click to hear the welcome message and begin the voice-guided book search. This voice mode will listen for commands like "list books", "find mystery", or the book title.</p>
+            <button class="btn-primary" onclick="startVoiceLibrary()" style="font-size:18px; padding:16px 26px;">🎤 Start Voice Library</button>
+        </div>
+    </div>
+
+    <div class="app">
+        <div class="hero" role="region" aria-label="Welcome">
+            <h1>Voice-Navigable Digital Library</h1>
+            <p>Designed for blind and low-vision readers. Search by typing or voice, then read aloud in English, Shona, or Ndebele. The system announces status and shows a preview of what is being read.</p>
+            <div class="hero-actions">
+                <button class="btn-primary" onclick="startVoiceLibrary()">🎤 Start Voice Library</button>
+                <button class="btn-outline" onclick="speakWelcome()">Play Welcome Message</button>
+                <button class="btn-outline" onclick="setSearch('title')">Show All Books</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="left-stack">
+                <div class="panel">
+                    <div class="search-row" role="search">
+                        <input type="text" id="searchBox" placeholder="Type a title or author. Try: title" aria-label="Search books">
+                        <button class="btn-primary" onclick="searchFromInput()" aria-label="Search">Search</button>
+                        <button class="btn-secondary" onclick="startVoiceSearch()" aria-label="Voice search">Speak</button>
+                    </div>
+
+                    <div class="filters">
+                        <select id="categorySelect" onchange="applyFilters()">
+                            <option value="all">All categories</option>
+                        </select>
+                        <select id="languageFilter" onchange="applyFilters()">
+                            <option value="all">All languages</option>
+                            <option value="en">English</option>
+                            <option value="sn">Shona</option>
+                            <option value="nd">Ndebele</option>
+                            <option value="unknown">Unknown</option>
+                        </select>
+                        <select id="voiceLanguage" onchange="updateVoiceLanguage()">
+                            <option value="en">Voice: English</option>
+                            <option value="sn">Voice: Shona</option>
+                            <option value="nd">Voice: Ndebele</option>
+                        </select>
+                    </div>
+
+                    <div class="summary-row" id="summaryRow">
+                        <span class="summary-pill" id="bookCount">Books: 0</span>
+                        <span class="summary-pill" id="statusPill">Status: Ready</span>
+                    </div>
+
+                    <div class="chips" id="quickChips"></div>
+                    <div class="suggestions" id="suggestions"></div>
+
+                    <div class="status" id="statusText">Welcome. Type or speak a search. Say "title" to list all books.</div>
+                    <div class="results" id="results"></div>
+
+                    <div class="helper" aria-live="polite">
+                        <strong>Easy search instructions (for blind users):</strong><br>
+                        1. Say "search title" to list all books.<br>
+                        2. Say "play" followed by the book name.<br>
+                        3. Use Pause, Continue, or Stop buttons to control reading.
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Book Preview (full text)</h3>
+                    <div class="full-text" id="fullTextPanel">Open a book to see the full text here.</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Playback Controls</h3>
+                <div class="player">
+                    <button class="btn-success" onclick="resumeReading()">Read / Continue</button>
+                    <button class="btn-warning" onclick="pauseReading()">Pause</button>
+                    <button class="btn-danger" onclick="stopReading()">Stop</button>
+                    <button class="btn-muted" onclick="nextChunk()">Next</button>
+                    <button class="btn-muted" onclick="slowDown()">Slow</button>
+                    <button class="btn-muted" onclick="speedUp()">Fast</button>
+                </div>
+
+                <div class="status" id="playbackStatus">No book playing.</div>
+
+                <h4>Now Reading Preview</h4>
+                <div class="preview" id="previewBox">Preview will appear here as the book is read.</div>
+
+                <h4>Quick Feedback</h4>
+                <div class="status">Rate your experience (1 = poor, 5 = excellent). This helps our usability testing.</div>
+                <div class="chips" id="ratingChips">
+                    <div class="chip" onclick="sendRating(1)">1</div>
+                    <div class="chip" onclick="sendRating(2)">2</div>
+                    <div class="chip" onclick="sendRating(3)">3</div>
+                    <div class="chip" onclick="sendRating(4)">4</div>
+                    <div class="chip" onclick="sendRating(5)">5</div>
+                </div>
+
+                <h4>Examples</h4>
+                <div class="chips">
+                    <div class="chip" onclick="setSearch('title')">Show all books</div>
+                    <div class="chip" onclick="setSearch('history')">History</div>
+                    <div class="chip" onclick="setSearch('poetry')">Poetry</div>
+                    <div class="chip" onclick="setSearch('folk')">Folk tales</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">Tip: Use "title" to list all books. Reading shows a live preview on the right.</div>
+    </div>
+
+    <!-- Audio element for welcome message -->
+    <audio id="welcomeAudio" src="/static/welcome.mp3" preload="auto"></audio>
+
+<script>
+const synth = window.speechSynthesis;
+let lastBook = null;
+let chunks = [];
+let chunkIndex = 0;
+let rate = 1;
+window.speechRate = 0.9;
+let currentVoiceLang = "en";
+let availableVoices = [];
+let allBooksCache = [];
+let activeCategory = "all";
+let activeLanguage = "all";
+let typingTimer = null;
+let welcomeSpoken = false;
+let welcomeAudioPlayed = false;
+let currentBookMeta = null;
+let isPlayingWelcomeAudio = false;
+let conversationMode = false;
+let listeningForCommand = false;
+let conversationRecognizer = null;
+const resultsDiv = document.getElementById("results");
+
+function postLog(payload) {
+    try {
+        fetch("/log", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload || {}),
+        }).catch(() => {});
+    } catch (_) {}
+}
+
+function setStatus(text) {
+    document.getElementById("statusText").textContent = text;
+    document.getElementById("statusPill").textContent = "Status: " + text;
+}
+
+function setPlayback(text) {
+    document.getElementById("playbackStatus").textContent = text;
+}
+
+function setPreview(text) {
+    document.getElementById("previewBox").textContent = text || "Preview will appear here as the book is read.";
+}
+
+function cleanTitle(fileName) {
+    return fileName
+        .replace(/^title_/, "")
+        .replace(/_cleaned$/i, "")
+        .replace(/\.txt$/i, "")
+        .replace(/_/g, " ")
+        .trim();
+}
+
+function titleCase(str) {
+    return str.replace(/\w\S*/g, (t) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase());
+}
+
+function loadVoices() {
+    availableVoices = synth.getVoices();
+}
+
+function pickVoice() {
+    if (!availableVoices.length) return null;
+    if (currentVoiceLang === "sn") {
+        return availableVoices.find(v => v.lang.toLowerCase().startsWith("sn")) || null;
+    }
+    if (currentVoiceLang === "nd") {
+        return availableVoices.find(v => v.lang.toLowerCase().startsWith("nd")) || null;
+    }
+    return availableVoices.find(v => v.lang.toLowerCase().startsWith("en")) || null;
+}
+
+function updateVoiceLanguage() {
+    currentVoiceLang = document.getElementById("voiceLanguage").value;
+    const voice = pickVoice();
+    if (!voice) {
+        setPlayback("Selected voice not found on this device. Using default voice.");
+    } else {
+        setPlayback("Voice set to " + voice.name);
+    }
+}
+
+function speak(text) {
+    const speech = new SpeechSynthesisUtterance(text);
+    const voice = pickVoice();
+    if (voice) speech.voice = voice;
+    speech.rate = rate;
+    synth.speak(speech);
+}
+
+function speakWelcome() {
+    if (welcomeAudioPlayed) return;
+    welcomeAudioPlayed = true;
+    isPlayingWelcomeAudio = true;
+    const welcomeAudio = document.getElementById("welcomeAudio");
+    
+    // Reset audio to start and play
+    welcomeAudio.currentTime = 0;
+    
+    // Play the audio
+    const playPromise = welcomeAudio.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.warn("Welcome audio autoplay failed:", error);
+            // If audio fails to play due to browser restrictions, just continue
+            isPlayingWelcomeAudio = false;
+        });
+    }
+    
+    postLog({ event: "welcome", lang: currentVoiceLang, type: "audio" });
+}
+
+function startVoiceSearch() {
+    if (conversationMode) {
+        listenForConversationCommand();
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        speak("Voice recognition is not supported in this browser. Try Chrome or Edge.");
+        return;
+    }
+    
+    // Play welcome audio if it hasn't been played yet
+    if (!welcomeAudioPlayed) {
+        speakWelcome();
+    }
+    
+    const welcomeAudio = document.getElementById("welcomeAudio");
+    const startListening = () => {
+        const recognition = new SpeechRecognition();
+        recognition.lang = "en-US";
+        recognition.start();
+        setStatus("Listening...");
+        recognition.onresult = function(event) {
+            const query = event.results[0][0].transcript;
+            setStatus("You said: " + query);
+            speak("You said " + query);
+            handleVoiceQuery(query);
+        };
+        recognition.onerror = function() {
+            setStatus("Sorry, I did not understand.");
+            speak("Sorry, I did not understand.");
+        };
+        isPlayingWelcomeAudio = false;
+    };
+    
+    if (isPlayingWelcomeAudio && !welcomeAudio.paused) {
+        welcomeAudio.onended = () => {
+            welcomeAudio.onended = null;
+            startListening();
+        };
+    } else {
+        setTimeout(startListening, 100);
+    }
+}
+
+function startVoiceLibrary() {
+    conversationMode = true;
+    const startOverlay = document.getElementById("startOverlay");
+    if (startOverlay) {
+        startOverlay.style.display = "none";
+    }
+    const welcomeAudio = document.getElementById("welcomeAudio");
+    welcomeAudio.currentTime = 0;
+    welcomeAudio.onended = () => {
+        isPlayingWelcomeAudio = false;
+        requestConversationPrompt();
+        // Start continuous recognition
+        initContinuousRecognition();
+    };
+    const playPromise = welcomeAudio.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(() => {
+            isPlayingWelcomeAudio = false;
+            requestConversationPrompt();
+            initContinuousRecognition();
+        });
+    }
+    isPlayingWelcomeAudio = true;
+}
+
+function requestConversationPrompt() {
+    fetch("/listen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+    })
+        .then((res) => res.json())
+        .then(handleConversationResponse)
+        .catch(() => {
+            setStatus("Unable to start conversation.");
+        });
+}
+
+function speakText(text, onEnd) {
+    if (!text) {
+        if (onEnd) onEnd();
+        return;
+    }
+    if (synth.speaking) synth.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = pickVoice();
+    if (voice) utterance.voice = voice;
+    utterance.rate = window.speechRate || 0.9;
+    utterance.onend = () => {
+        if (typeof onEnd === "function") {
+            onEnd();
+        }
+    };
+    synth.speak(utterance);
+}
+
+function speakAndThenListen(text) {
+    speakText(text, listenForConversationCommand);
+}
+
+function listenForConversationCommand() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        speakText("Voice recognition is not supported in this browser. Try Chrome or Edge.");
+        return;
+    }
+    if (conversationRecognizer) {
+        conversationRecognizer.abort();
+        conversationRecognizer = null;
+    }
+    conversationRecognizer = new SpeechRecognition();
+    conversationRecognizer.lang = "en-US";
+    conversationRecognizer.continuous = false;
+    conversationRecognizer.interimResults = true;
+    conversationRecognizer.start();
+    listeningForCommand = true;
+    setStatus("🎤 Listening... Please speak now.");
+    
+    let hasResult = false;
+    
+    conversationRecognizer.onstart = function() {
+        setStatus("🎤 Listening... Please speak now.");
+    };
+    
+    conversationRecognizer.onresult = function(event) {
+        hasResult = true;
+        let interimTranscript = "";
+        let finalTranscript = "";
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript + " ";
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+        
+        if (finalTranscript) {
+            listeningForCommand = false;
+            const query = finalTranscript.trim();
+            setStatus("You said: " + query);
+            submitConversationalCommand(query);
+        } else if (interimTranscript) {
+            setStatus("🎤 Listening... (hearing: " + interimTranscript + ")");
+        }
+    };
+    
+    conversationRecognizer.onerror = function(event) {
+        listeningForCommand = false;
+        // Ignore certain errors that just mean silence
+        if (event.error === "no-speech" || event.error === "audio-capture") {
+            setStatus("No speech detected. Please try again.");
+            // Restart listening automatically
+            setTimeout(listenForConversationCommand, 1500);
+        } else if (event.error === "network") {
+            setStatus("Network error. Please check your connection.");
+            speakText("Network error. Please check your connection.", listenForConversationCommand);
+        } else {
+            setStatus("Error: " + event.error);
+        }
+    };
+    
+    conversationRecognizer.onend = function() {
+        listeningForCommand = false;
+        if (!hasResult) {
+            setStatus("No speech detected. Listening again...");
+            setTimeout(listenForConversationCommand, 1000);
+        }
+    };
+}
+
+function submitConversationalCommand(query) {
+    fetch("/listen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: query }),
+    })
+        .then((res) => res.json())
+        .then(handleConversationResponse)
+        .catch(() => {
+            setStatus("Unable to send your command.");
+        });
+}
+
+function handleConversationResponse(data) {
+    if (!data) {
+        setStatus("Empty response from server.");
+        return;
+    }
+    if (data.search_results) {
+        const rows = data.search_results
+            .map((book, idx) => `<div>${idx + 1}. ${book.title} by ${book.author || 'Unknown author'}</div>`)
+            .join("");
+        document.getElementById("results").innerHTML = `<div style="padding:12px; border:1px solid rgba(148,163,184,0.2); border-radius:12px; margin-bottom:12px;"><strong>Search results:</strong>${rows}</div>`;
+    }
+    if (data.action === "speak") {
+        speakAndThenListen(data.text);
+        setStatus(data.text || "Listening...");
+    } else if (data.action === "play" || data.action === "play_next") {
+        speakText(data.text || `Now playing ${data.title}`, () => {
+            startPlayback(data.book_id || data.file, data.title, data.author);
+        });
+        setStatus(data.text || `Now playing ${data.title}`);
+    } else if (data.action === "pause") {
+        if (synth.speaking && !synth.paused) {
+            synth.pause();
+            setStatus(data.text || "⏸️ Paused.");
+            speakText(data.text || "Paused.");
+        }
+    } else if (data.action === "resume") {
+        if (synth.paused) {
+            synth.resume();
+            setStatus(data.text || "▶️ Resumed.");
+            speakText(data.text || "Resumed.");
+        } else if (!synth.speaking) {
+            const lastBookId = sessionStorage.getItem("lastBookId");
+            if (lastBookId) {
+                fetch(`/book_text/${encodeURIComponent(lastBookId)}`)
+                    .then((res) => res.json())
+                    .then((bookData) => {
+                        startPlayback(lastBookId, bookData.title, bookData.author);
+                    });
+            } else {
+                setStatus("No book selected. Please search first.");
+                speakText("No book selected. Please search first.");
+            }
+        }
+    } else if (data.action === "stop") {
+        if (synth.speaking) synth.cancel();
+        setStatus(data.text || "⏹️ Stopped.");
+        speakText(data.text || "Stopped.", listenForConversationCommand);
+    } else if (data.action === "rate") {
+        window.speechRate = data.value;
+        rate = data.value;
+        setStatus(`Speech rate changed to ${data.value === 0.7 ? 'slow' : 'fast'}.`);
+        speakText(`Speech rate changed to ${data.value === 0.7 ? 'slow' : 'fast'}.`, listenForConversationCommand);
+    } else {
+        setStatus(data.message || "Command processed.");
+    }
+}
+
+function startPlayback(bookFile, title, author) {
+    fetch(`/read/${encodeURIComponent(bookFile)}`)
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.error) {
+                speakText(data.error);
+                return;
+            }
+            const text = data.content || "";
+            if (!text) {
+                speakText("This book is empty.");
+                return;
+            }
+            currentBookMeta = { file: bookFile, title: title, author: author };
+            lastBook = bookFile;
+            sessionStorage.setItem("lastBookId", bookFile);
+            synth.cancel();
+            chunks = text.match(/.{1,1600}(\s|$)/g) || [text];
+            chunkIndex = 0;
+            renderFullText(chunks);
+            playChunk();
+        });
+}
+
+function handleVoiceQuery(query) {
+    const q = query.toLowerCase().trim();
+    if (q.startsWith("play ") || q.startsWith("read ")) {
+        const title = q.replace(/^play\s+|^read\s+/i, "").trim();
+        if (!title) {
+            speak("Please say the book name.");
+            return;
+        }
+        postLog({ event: "voice_play", query: title, lang: currentVoiceLang });
+        searchBooks(title, true);
+        return;
+    }
+    postLog({ event: "voice_search", query: query, lang: currentVoiceLang });
+    searchBooks(query);
+}
+
+function setSearch(value) {
+    document.getElementById("searchBox").value = value;
+    postLog({ event: "chip_search", query: value, lang: currentVoiceLang });
+    searchBooks(value);
+}
+
+function searchFromInput() {
+    let query = document.getElementById("searchBox").value;
+    postLog({ event: "typed_search", query: query, lang: currentVoiceLang });
+    searchBooks(query);
+}
+
+function filterBooks(data) {
+    return data.filter(book => {
+        const category = book.category || "General";
+        const language = book.language || "unknown";
+        if (activeCategory !== "all" && category !== activeCategory) return false;
+        if (activeLanguage !== "all" && language !== activeLanguage) return false;
+        return true;
+    });
+}
+
+function applyFilters() {
+    activeCategory = document.getElementById("categorySelect").value;
+    activeLanguage = document.getElementById("languageFilter").value;
+    renderBooks(filterBooks(allBooksCache));
+}
+
+function searchBooks(query, autoPlayFirst = false) {
+    const q = (query || "").trim();
+    setStatus("Searching...");
+    fetch(`/search?q=${encodeURIComponent(q)}`)
+        .then(res => res.json())
+        .then(data => {
+            allBooksCache = data.map(book => ({
+                ...book,
+                title: book.title ? titleCase(book.title) : titleCase(cleanTitle(book.file || "")),
+                tags: book.tags || []
+            }));
+            buildSuggestions(allBooksCache, q);
+            buildCategories(allBooksCache);
+            renderBooks(filterBooks(allBooksCache));
+            document.getElementById("bookCount").textContent = "Books: " + allBooksCache.length;
+            if (!q) {
+                setStatus("Showing all books");
+            } else {
+                setStatus("Found " + allBooksCache.length + " books");
+            }
+            if (autoPlayFirst && allBooksCache.length) {
+                readBook(allBooksCache[0].file);
+            }
+        });
+}
+
+function buildSuggestions(data, query) {
+    const list = document.getElementById("suggestions");
+    list.innerHTML = "";
+    const q = (query || "").toLowerCase();
+    if (!q) return;
+    const matches = data.filter(book => book.title.toLowerCase().includes(q)).slice(0, 6);
+    matches.forEach(book => {
+        const item = document.createElement("div");
+        item.className = "suggestion-item";
+        item.textContent = "Try: " + book.title;
+        item.onclick = () => readBook(book.file);
+        list.appendChild(item);
+    });
+}
+
+function buildCategories(data) {
+    const categories = new Set(["General"]);
+    data.forEach(book => categories.add(book.category || "General"));
+    const select = document.getElementById("categorySelect");
+    const current = select.value;
+    select.innerHTML = '<option value="all">All categories</option>';
+    Array.from(categories).sort().forEach(cat => {
+        const option = document.createElement("option");
+        option.value = cat;
+        option.textContent = cat;
+        select.appendChild(option);
+    });
+    if (current) select.value = current;
+    buildQuickChips(Array.from(categories));
+}
+
+function buildQuickChips(categories) {
+    const chips = document.getElementById("quickChips");
+    chips.innerHTML = "";
+    const base = ["all"].concat(categories.sort());
+    base.forEach(cat => {
+        const chip = document.createElement("div");
+        chip.className = "chip" + (activeCategory === cat ? " active" : "");
+        chip.textContent = cat === "all" ? "All Books" : cat;
+        chip.onclick = () => {
+            activeCategory = cat;
+            document.getElementById("categorySelect").value = cat === "all" ? "all" : cat;
+            applyFilters();
+        };
+        chips.appendChild(chip);
+    });
+}
+
+function renderBooks(data) {
+    const results = document.getElementById("results");
+    results.innerHTML = "";
+
+    if (!data.length) {
+        results.innerHTML = "<div>No books found</div>";
+        return;
+    }
+
+    data.forEach(book => {
+        const category = book.category || "General";
+        const language = book.language || "unknown";
+        const tags = (book.tags || []).slice(0, 3);
+        const card = document.createElement("div");
+        card.className = "book-card";
+        card.innerHTML = `
+            <h3>${book.title}</h3>
+            <p>${book.author ? book.author : book.file}</p>
+            <div class="meta">
+                <span class="tag">${category}</span>
+                <span class="tag">${language === "en" ? "English" : language === "sn" ? "Shona" : language === "nd" ? "Ndebele" : "Unknown"}</span>
+                ${tags.map(t => `<span class="tag">${t}</span>`).join("")}
+            </div>
+            <button class="btn-outline" onclick="readBook('${book.file}')">Read</button>
+        `;
+        results.appendChild(card);
+    });
+}
+
+function readBook(bookName) {
+    currentBookMeta = allBooksCache.find(b => b.file === bookName) || null;
+    postLog({
+        event: "read_start",
+        file: bookName,
+        query: document.getElementById("searchBox").value || "",
+        lang: currentVoiceLang,
+        category: currentBookMeta ? (currentBookMeta.category || "") : "",
+    });
+    fetch(`/read/${encodeURIComponent(bookName)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                speak(data.error);
+                return;
+            }
+            const text = data.content || "";
+            if (!text) {
+                speak("This book is empty.");
+                return;
+            }
+            lastBook = bookName;
+            synth.cancel();
+            chunks = text.match(/.{1,1600}(\s|$)/g) || [text];
+            chunkIndex = 0;
+            renderFullText(chunks);
+            playChunk();
+        });
+}
+
+function playChunk() {
+    if (!chunks.length) return;
+    const speech = new SpeechSynthesisUtterance(chunks[chunkIndex]);
+    const voice = pickVoice();
+    if (voice) speech.voice = voice;
+    speech.rate = window.speechRate || 0.9;
+    speech.onend = () => {
+        if (chunkIndex < chunks.length - 1) {
+            chunkIndex++;
+            playChunk();
+        } else {
+            setPlayback("Finished reading.");
+            postLog({
+                event: "read_finished",
+                file: lastBook || "",
+                lang: currentVoiceLang,
+                category: currentBookMeta ? (currentBookMeta.category || "") : "",
+            });
+        }
+    };
+    setPreview(chunks[chunkIndex]);
+    highlightChunk(chunkIndex);
+    synth.speak(speech);
+    setPlayback("Reading... (" + (chunkIndex + 1) + "/" + chunks.length + ")");
+}
+
+function pauseReading() {
+    synth.pause();
+    setPlayback("Paused.");
+    postLog({ event: "pause", file: lastBook || "", lang: currentVoiceLang });
+}
+
+function resumeReading() {
+    if (synth.paused) {
+        synth.resume();
+        postLog({ event: "resume", file: lastBook || "", lang: currentVoiceLang });
+    } else if (lastBook) {
+        readBook(lastBook);
+    }
+}
+
+function stopReading() {
+    synth.cancel();
+    setPlayback("Stopped.");
+    postLog({ event: "stop", file: lastBook || "", lang: currentVoiceLang });
+}
+
+function nextChunk() {
+    if (chunkIndex < chunks.length - 1) {
+        synth.cancel();
+        chunkIndex++;
+        postLog({ event: "next", file: lastBook || "", lang: currentVoiceLang, extra: String(chunkIndex) });
+        playChunk();
+    }
+}
+
+function slowDown() {
+    rate = Math.max(0.6, rate - 0.1);
+    setPlayback("Speed: " + rate.toFixed(1));
+    postLog({ event: "speed", file: lastBook || "", lang: currentVoiceLang, extra: rate.toFixed(1) });
+}
+
+function speedUp() {
+    rate = Math.min(1.6, rate + 0.1);
+    setPlayback("Speed: " + rate.toFixed(1));
+    postLog({ event: "speed", file: lastBook || "", lang: currentVoiceLang, extra: rate.toFixed(1) });
+}
+
+function sendRating(value) {
+    postLog({
+        event: "rating",
+        rating: String(value),
+        file: lastBook || "",
+        lang: currentVoiceLang,
+        category: currentBookMeta ? (currentBookMeta.category || "") : "",
+    });
+    setPlayback("Thanks for the feedback. Rating: " + value);
+}
+
+function onType() {
+    const q = document.getElementById("searchBox").value.trim();
+    if (typingTimer) clearTimeout(typingTimer);
+    setStatus(q ? "Typing: " + q : "Ready");
+    typingTimer = setTimeout(() => searchBooks(q), 400);
+}
+
+function renderFullText(parts) {
+    const panel = document.getElementById("fullTextPanel");
+    panel.innerHTML = parts
+        .map((chunk, idx) => `<span class="chunk" data-idx="${idx}">${chunk}</span>`)
+        .join(" ");
+}
+
+function highlightChunk(index) {
+    const panel = document.getElementById("fullTextPanel");
+    const nodes = panel.querySelectorAll(".chunk");
+    nodes.forEach(el => el.classList.remove("active"));
+    const active = panel.querySelector(`.chunk[data-idx="${index}"]`);
+    if (active) {
+        active.classList.add("active");
+        active.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+}
+
+window.onload = function() {
+    loadVoices();
+    document.getElementById("searchBox").addEventListener("input", onType);
+    setStatus("Welcome. Type or speak a search. Say title to list all books.");
+    
+    // Call speakWelcome on first user interaction (click or keydown)
+    const playWelcomeOnInteraction = () => {
+        speakWelcome();
+        document.removeEventListener("click", playWelcomeOnInteraction);
+        document.removeEventListener("keydown", playWelcomeOnInteraction);
+    };
+    document.addEventListener("click", playWelcomeOnInteraction);
+    document.addEventListener("keydown", playWelcomeOnInteraction);
+    
+    setStatus("Click Start Voice Library to begin voice-guided search.");
+    searchBooks("title");
+};
+
+// Continuous recognition setup
+let recognition = null;
+let isRecognitionActive = false;
+let isProcessingCommand = false;
+
+function initContinuousRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        console.error("Speech recognition not supported");
+        return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;      // keep listening
+    recognition.interimResults = false; // only final results
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+        const last = event.results.length - 1;
+        const command = event.results[last][0].transcript.trim().toLowerCase();
+        console.log("Heard:", command);
+        
+        // Only process if not already processing a command
+        if (isProcessingCommand) return;
+        isProcessingCommand = true;
+        
+        // Pause TTS if playing
+        let wasPlaying = false;
+        if (synth.speaking && !synth.paused) {
+            synth.pause();
+            wasPlaying = true;
+        }
+        
+        // Send command to backend
+        fetch('/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: command })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.action === 'pause') {
+                // already paused
+                resultsDiv.innerHTML = '⏸️ Paused. Say "resume" to continue.';
+            } else if (data.action === 'resume') {
+                if (synth.paused) synth.resume();
+                resultsDiv.innerHTML = '▶️ Resumed.';
+            } else if (data.action === 'stop') {
+                if (synth.speaking) synth.cancel();
+                isPlaying = false;
+                stopReadingBtn.style.display = 'none';
+                resultsDiv.innerHTML = '⏹️ Stopped.';
+                // Optionally go back to listening for new book
+                requestConversationPrompt(); // reset state
+            } else if (data.action === 'play_next') {
+                // stop current, play next
+                if (synth.speaking) synth.cancel();
+                startPlayback(data.book_id, data.title, data.author);
+            } else if (data.action === 'rate') {
+                window.speechRate = data.value;
+                resultsDiv.innerHTML = `Speech rate changed to ${data.value === 0.7 ? 'slow' : 'fast'}.`;
+                // Restart current utterance with new rate (optional)
+                // For simplicity, apply to next utterance.
+            } else {
+                // unknown command, just resume if was playing
+                if (wasPlaying && !synth.speaking && synth.paused) {
+                    synth.resume();
+                }
+            }
+            isProcessingCommand = false;
+        })
+        .catch(err => {
+            console.error(err);
+            if (wasPlaying && synth.paused) synth.resume();
+            isProcessingCommand = false;
+        });
+    };
+    
+    recognition.onerror = (event) => {
+        console.error("Recognition error:", event.error);
+        // Restart after error
+        setTimeout(() => {
+            if (isRecognitionActive) recognition.start();
+        }, 1000);
+    };
+    
+    recognition.start();
+    isRecognitionActive = true;
+}
+
+synth.onvoiceschanged = loadVoices;
+</script>
+</body>
+</html> 
