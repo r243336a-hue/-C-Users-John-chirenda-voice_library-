@@ -1,37 +1,92 @@
 """
-Configuration settings for the voice library.
+Configuration settings for the Voice Library application.
+
+Manages environment-specific settings and feature flags.
 """
 
 import os
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-CLEANED_DIR = os.path.join(DATA_DIR, "cleaned")
-DB_DIR = os.path.join(DATA_DIR, "database")
-DB_PATH = os.path.join(DB_DIR, "library.db")
-AUDIO_CACHE_DIR = os.path.join(BASE_DIR, "audio_cache")
-LOGS_DIR = os.path.join(BASE_DIR, "logs")
 
-TTS_MODEL_NAME = "tts_models/en/vctk/vits"
-TTS_SPEAKER = "p226"
+class BaseConfig:
+    """Base configuration with common settings."""
+    
+    # Application
+    APP_NAME = 'Voice Library'
+    APP_VERSION = '2.0.0'
+    
+    # Database
+    DB_PATH = Path(__file__).parent / "data" / "database" / "library.db"
+    DB_TIMEOUT = 5
+    
+    # Search
+    MAX_SEARCH_RESULTS = 5
+    MAX_QUERY_LENGTH = 100
+    SEARCH_TIMEOUT = 10
+    
+    # Speech Recognition
+    SPEECH_TIMEOUT = 5
+    PHRASE_TIME_LIMIT = 5
+    SPEECH_RECOGNITION_TIMEOUT = 30
+    SUPPORTED_ENCODINGS = ['utf-8', 'latin-1', 'ascii']
+    
+    # Flask
+    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+    JSON_SORT_KEYS = False
+    
+    # Logging
+    LOG_LEVEL = 'INFO'
+    LOG_FILE = 'voice_library.log'
+    LOG_MAX_BYTES = 10485760  # 10MB
+    LOG_BACKUP_COUNT = 5
+    
+    # Security
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max request size
+    
+    # Caching
+    CACHE_TYPE = 'simple'
+    CACHE_DEFAULT_TIMEOUT = 300
 
-PHRASE_HINTS = []
-WAKE_WORD = "library"
-REQUIRE_WAKE_WORD = False
 
-STT_ENGINE = os.environ.get("VOICE_LIBRARY_STT_ENGINE", "google").lower().strip()
-VOSK_MODEL_DIR = os.environ.get(
-    "VOICE_LIBRARY_VOSK_MODEL",
-    os.path.join(BASE_DIR, "models", "vosk-model-small-en-us-0.15"),
-)
+class DevelopmentConfig(BaseConfig):
+    """Development environment configuration."""
+    
+    DEBUG = True
+    TESTING = False
+    LOG_LEVEL = 'DEBUG'
 
-INTENT_KEYWORDS = {
-    "SEARCH": ["find", "search", "look for", "get"],
-    "PLAY": ["play", "read", "start"],
-    "PAUSE": ["pause", "stop reading", "hold"],
-    "RESUME": ["resume", "continue", "go on"],
-    "STOP": ["stop", "quit", "exit"],
-    "HELP": ["help", "what can I say", "instructions"],
+
+class TestingConfig(BaseConfig):
+    """Testing environment configuration."""
+    
+    DEBUG = True
+    TESTING = True
+    DB_PATH = ':memory:'  # Use in-memory database for tests
+    LOG_LEVEL = 'WARNING'
+
+
+class ProductionConfig(BaseConfig):
+    """Production environment configuration."""
+    
+    DEBUG = False
+    TESTING = False
+    LOG_LEVEL = 'WARNING'
+    
+    # Override with environment variables in production
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    DB_PATH = Path(os.getenv('DB_PATH', BaseConfig.DB_PATH))
+
+
+config = {
+    'development': DevelopmentConfig,
+    'testing': TestingConfig,
+    'production': ProductionConfig,
+    'default': DevelopmentConfig
 }
 
-FUZZY_THRESHOLD = 0.75
+
+def get_config(env=None):
+    """Get configuration for specified environment."""
+    if env is None:
+        env = os.getenv('FLASK_ENV', 'development')
+    return config.get(env, config['default'])
