@@ -1,23 +1,23 @@
 title,author,subject_tags,category,language,file_path,wordcount,filesize_bytes
-Glasgow Men and Women,A. S. Boyd,English,English,en,data\cleaned\glasgow_men_and_women_boyd_cleaned.txt,16836,117186
-Mitteilungen des Landesvereins Saechsischer Heimatschutz,Landesverein Saechsischer Heimatschutz,English,English,en,data\cleaned\landesverein_saechsischer_heimatschutz_cleaned.txt,52764,403750
-Africa,Antoni Ferrer i Codina,English,English,en,data\cleaned\africa_ferrer_i_codina_cleaned.txt,20811,120464
-Spaete Rache,Arthur Conan Doyle,English,English,en,data\cleaned\spaete_rache_doyle_cleaned.txt,39018,265306
-Its Time Something Happened,Arthur Doyle,English,English,en,data\cleaned\its_time_something_happened_doyle_cleaned.txt,7537,42268
-author,unknown_author,English,English,en,data\cleaned\author_unknown_author_cleaned.txt,4458,25186
-The Authorized Life of Marie C Stopes,Aylmer Maude,English,English,en,data\cleaned\authorized_life_of_marie_c_stopes_maude_cleaned.txt,44269,262093
-Dancing Beauty and Games,Lady Constance Stewart Richardson,English,English,en,data\cleaned\dancing_beauty_and_games_richardson_cleaned.txt,18172,100959
-The Mordant,Merab Eberle,English,English,en,data\cleaned\the_mordant_eberle_cleaned.txt,4458,25186
-Psychopathology and Politics,Harold D Lasswell,English,English,en,data\cleaned\psychopathology_and_politics_lasswell_cleaned.txt,84516,536326
-Another Study of Woman,Honore de Balzac,English,English,en,data\cleaned\another_study_of_woman_balzac_cleaned.txt,14679,85112
-From the Hidden Way,James Branch Cabell,English,English,en,data\cleaned\from_the_hidden_way_cabell_cleaned.txt,22932,160842
-JohannWolfgangvonGoethe,unknown_author,English,English,en,data\cleaned\johannwolfgangvongoethe_unknown_author_cleaned.txt,8478,50772
-JohnStephenFarmer,unknown_author,English,English,en,data\cleaned\johnstephenfarmer_unknown_author_cleaned.txt,220607,1366290
-KasperiTanttu,unknown_author,English,English,en,data\cleaned\kasperitanttu_unknown_author_cleaned.txt,2942,23755
-LandesvereinSächsischerHeimatschutz,unknown_author,English,English,en,data\cleaned\landesvereinsächsischerheimatschutz_unknown_author_cleaned.txt,30975,227865
-LouiseGerard,unknown_author,English,English,en,data\cleaned\louisegerard_unknown_author_cleaned.txt,78494,442494
-LucyEllenGuernsey,unknown_author,English,English,en,data\cleaned\lucyellenguernsey_unknown_author_cleaned.txt,42626,232800
-MerabEberle,unknown_author,English,English,en,data\cleaned\merabeberle_unknown_author_cleaned.txt,4458,25186
-MichaelShaara,unknown_author,English,English,en,data\cleaned\michaelshaara_unknown_author_cleaned.txt,1734,9665
-PaulMerruau,unknown_author,English,English,en,data\cleaned\paulmerruau_unknown_author_cleaned.txt,96205,624655
-WilliamF.Hudgings,unknown_author,English,English,en,data\cleaned\williamfhudgings_unknown_author_cleaned.txt,14166,87247
+Glasgow Men and Women,A. S. Boyd,biography|social history|Scotland,Biography,English,data\cleaned\glasgow_men_and_women_boyd_cleaned.txt,16836,117186
+Mitteilungen des Landesvereins Saechsischer Heimatschutz,Landesverein Saechsischer Heimatschutz,history|heritage|Germany,History,German,data\cleaned\landesverein_saechsischer_heimatschutz_cleaned.txt,52764,403750
+Africa,Antoni Ferrer i Codina,travel|Africa|exploration,Travel,English,data\cleaned\africa_ferrer_i_codina_cleaned.txt,20811,120464
+Spaete Rache,Arthur Conan Doyle,mystery|detective|fiction,Fiction,German,data\cleaned\spaete_rache_doyle_cleaned.txt,39018,265306
+It's Time Something Happened,Arthur Conan Doyle,fiction|short story|adventure,Fiction,English,data\cleaned\its_time_something_happened_doyle_cleaned.txt,7537,42268
+The Mordant (author_unknown),Merab Eberle,fiction|science fiction|short story,Fiction,English,data\cleaned\author_unknown_author_cleaned.txt,4458,25186
+The Authorized Life of Marie C. Stopes,Aylmer Maude,biography|women|science,Biography,English,data\cleaned\authorized_life_of_marie_c_stopes_maude_cleaned.txt,44269,262093
+Dancing Beauty and Games,Lady Constance Stewart Richardson,dance|sport|women|health,Non-Fiction,English,data\cleaned\dancing_beauty_and_games_richardson_cleaned.txt,18172,100959
+The Mordant,Merab Eberle,fiction|science fiction|short story,Fiction,English,data\cleaned\the_mordant_eberle_cleaned.txt,4458,25186
+Psychopathology and Politics,Harold D. Lasswell,politics|psychology|social science,Non-Fiction,English,data\cleaned\psychopathology_and_politics_lasswell_cleaned.txt,84516,536326
+Another Study of Woman,Honore de Balzac,fiction|romance|French literature,Fiction,English,data\cleaned\another_study_of_woman_balzac_cleaned.txt,14679,85112
+From the Hidden Way,James Branch Cabell,poetry|fantasy|fiction,Poetry,English,data\cleaned\from_the_hidden_way_cabell_cleaned.txt,22932,160842
+Faust,Johann Wolfgang von Goethe,drama|poetry|German literature|classic,Drama,English,data\cleaned\johannwolfgangvongoethe_unknown_author_cleaned.txt,8478,50772
+Slang and Its Analogues,John Stephen Farmer,reference|language|linguistics,Reference,English,data\cleaned\johnstephenfarmer_unknown_author_cleaned.txt,220607,1366290
+Finnish Folk Tales,Kasperi Tanttu,folklore|fairy tales|Finland,Folklore,English,data\cleaned\kasperitanttu_unknown_author_cleaned.txt,2942,23755
+Saxon Homeland Protection Records,Landesverein Saechsischer Heimatschutz,history|heritage|Germany,History,German,data\cleaned\landesvereinsächsischerheimatschutz_unknown_author_cleaned.txt,30975,227865
+The Veil of the Temple,Louise Gerard,fiction|romance|adventure,Fiction,English,data\cleaned\louisegerard_unknown_author_cleaned.txt,78494,442494
+Zephyrine,Lucy Ellen Guernsey,fiction|historical|Christian,Fiction,English,data\cleaned\lucyellenguernsey_unknown_author_cleaned.txt,42626,232800
+The Mordant and Other Stories,Merab Eberle,fiction|short stories,Fiction,English,data\cleaned\merabeberle_unknown_author_cleaned.txt,4458,25186
+The Killer Angels,Michael Shaara,fiction|historical|war|American Civil War,Fiction,English,data\cleaned\michaelshaara_unknown_author_cleaned.txt,1734,9665
+Memoires,Paul Merruau,memoir|history|France,Biography,French,data\cleaned\paulmerruau_unknown_author_cleaned.txt,96205,624655
+Introduction to Einstein,William F. Hudgings,science|physics|relativity|popular science,Non-Fiction,English,data\cleaned\williamfhudgings_unknown_author_cleaned.txt,14166,87247

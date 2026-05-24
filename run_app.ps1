@@ -9,7 +9,7 @@ if (-not (Test-Path $python)) {
     $python = "python"
 }
 
-$arguments = @("app.py")
+$arguments = @("src/main.py")
 
 if ($Background) {
     $stdout = Join-Path $PSScriptRoot "flask-server.out.log"
